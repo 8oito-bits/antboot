@@ -6,7 +6,8 @@
 #include <info.h>
 #include <errors.h>
 
-void (*_start_ant)(void);
+__attribute__((sysv_abi))
+void (*_start_ant)(struct boot_info *);
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 {
@@ -18,7 +19,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
   status = conout->SetMode(conout, 0);
   if(EFI_ERROR(status))
     error(L"SetMode: Failed to set mode. ");
-  
+ 
   conout->SetAttribute(conout, EFI_BACKGROUND_BLACK | EFI_WHITE);
   
   EFI_FILE_PROTOCOL *file_protocol; 
@@ -46,16 +47,16 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 
   elf_clear_all(&kernel_info);    
 
-  struct gop_video_mode *video_mode;
-  video_mode = allocate_runtime_pool(sizeof *video_mode);
-  status = gop_init(video_mode);
+  struct boot_info *boot_info = allocate_runtime_pool(sizeof *boot_info);
+
+  status = gop_init(&boot_info->mode);
   if(EFI_ERROR(status))
     fatal_error(L"gop_init: Failed to init gop mode.");
 
   struct memory_map *map;
   map = allocate_runtime_pool(sizeof *map);
   UINTN map_key;
-  status = memory_get_map(map, &map_key);
+  status = memory_get_map(&boot_info->map, &map_key);
   if(EFI_ERROR(status))
     fatal_error(L"memory_get_map: Failed to get memory map.");
 
@@ -63,8 +64,9 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
   if(EFI_ERROR(status))
     fatal_error(L"ExitBootServices: Failed to exit boot services.");
 
-  _start_ant = (void (*)(void)) kernel_info.elf_header.e_entry;
-  _start_ant();
+  _start_ant = (__attribute__((sysv_abi)) void (*)(struct boot_info *)) 
+               kernel_info.elf_header.e_entry;
+  _start_ant(boot_info);
 
   return EFI_SUCCESS;
 }

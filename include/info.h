@@ -7,7 +7,7 @@
 
 struct boot_info
 {
-  struct memory_map *map;    
+  struct memory_map map;    
   struct gop_video_mode mode;
 };
 
