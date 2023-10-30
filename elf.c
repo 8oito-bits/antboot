@@ -41,8 +41,8 @@ static EFI_STATUS load_section_header(struct elf *elf_info)
   return EFI_SUCCESS;
 }
 
-// Compute kernel size.
-static void compute_kernel_size(struct elf *elf_info)
+// Calculate kernel size.
+static void calculate_kernel_size(struct elf *elf_info)
 {
   UINTN i;
   UINTN kernel_size = 0;
@@ -87,7 +87,7 @@ EFI_STATUS elf_parse(struct elf *elf_info)
   if(EFI_ERROR(status))
     return status;
 
-  compute_kernel_size(elf_info);
+  calculate_kernel_size(elf_info);
 
   status = load_section_header(elf_info);
   if(EFI_ERROR(status))
