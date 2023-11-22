@@ -41,29 +41,6 @@ static EFI_STATUS load_section_header(struct elf *elf_info)
   return EFI_SUCCESS;
 }
 
-// Calculate kernel size.
-static void calculate_kernel_size(struct elf *elf_info)
-{
-  UINTN i;
-  UINTN kernel_size = 0;
-  UINT64 p_memsz, p_align;
-  for(i = 0; i < elf_info->elf_header.e_phnum; i++)
-  {
-    // Check if program header entry need to be loaded
-    if(elf_info->program_header[i].p_type == PT_LOAD)
-    {
-      p_align = elf_info->program_header[i].p_align;
-      p_memsz = elf_info->program_header[i].p_memsz;
-      // Is aligned?
-      if(p_memsz & p_align - 1)
-        // Align size.
-        kernel_size += ALIGNUP(p_memsz, p_align) /*p_memsz + (p_align - 1) & ~(p_align - 1)*/;
-    }
-  }
-
-  elf_info->kernel_size = kernel_size;
-}
-
 // Check if file is an elf.
 static INTN is_elf(struct elf *elf_info)
 {
@@ -87,8 +64,6 @@ EFI_STATUS elf_parse(struct elf *elf_info)
   if(EFI_ERROR(status))
     return status;
 
-  calculate_kernel_size(elf_info);
-
   status = load_section_header(elf_info);
   if(EFI_ERROR(status))
     return status;
@@ -107,23 +82,43 @@ EFI_STATUS elf_load_kernel(struct elf *elf_info)
 {
   EFI_STATUS status;
 
-  EFI_PHYSICAL_ADDRESS address = elf_info->elf_header.e_entry;
-  status = BS->AllocatePages(AllocateMaxAddress,
-                             EfiRuntimeServicesCode,
-                             elf_info->kernel_size / PAGE_SIZE,
-                             &address);
-
-  if(EFI_ERROR(status))
-    return status;
-  
   UINTN i;
   UINTN size;
   UINTN position;
   EFI_FILE_PROTOCOL *file_interface = elf_info->file_interface;
+  EFI_PHYSICAL_ADDRESS address;
+  UINT64 p_memsz, p_align;
+  EFI_MEMORY_TYPE memory_type;
   for(i = 0; i < elf_info->elf_header.e_phnum; i++)
   {
-    size = ALIGNUP(elf_info->program_header[i].p_memsz, elf_info->program_header[i].p_align);
+    if(elf_info->program_header[i].p_type != PT_LOAD)
+      continue;
+
+    p_memsz = elf_info->program_header[i].p_memsz;
+    p_align = elf_info->program_header[i].p_align;
+
+    if(p_memsz & p_align - 1)
+      size = ALIGNUP(p_memsz, p_align);
+    else
+      size = p_memsz;
+
     address = elf_info->program_header[i].p_paddr;
+    if(elf_info->program_header[i].p_flags & 0x1)
+      memory_type = EfiRuntimeServicesCode;
+    else
+      memory_type = EfiRuntimeServicesData;
+
+    status = BS->AllocatePages(AllocateAddress,
+                               memory_type,
+                               size / PAGE_SIZE,
+                               &address);
+
+    if(EFI_ERROR(status))
+    {
+      error(L"Failed to alloc page to kernel.");
+      return status;
+    }
+
     position = elf_info->program_header[i].p_offset;
     file_set_position(file_interface, position);
     if(file_read_file(file_interface, &size, (EFI_PHYSICAL_ADDRESS *) address))
