@@ -19,3 +19,12 @@ UINTN strlen(const CHAR16 *str)
 
   return p - str;
 }
+
+VOID *memset(VOID *s, UINTN c, UINTN size)
+{
+  UINT8 *p = s;
+  while(size-- > 0)
+    *p++ = c;
+
+  return s;
+}

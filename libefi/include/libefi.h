@@ -18,6 +18,7 @@ INTN printf(const CHAR16 *, ...);
 
 // String functions.
 UINTN strlen(const CHAR16 *);
+VOID *memset(VOID *, UINTN, UINTN);
 
 // Stdlib functions.
 VOID uitoh(CHAR16 *, UINT64);
