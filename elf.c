@@ -22,6 +22,45 @@ static EFI_STATUS load_program_header(struct elf *elf_info)
   return EFI_SUCCESS;
 } 
 
+static EFI_STATUS load_string_table(struct elf *elf_info)
+{
+  EFI_STATUS status;
+
+  struct elf_64_section_header str_section = elf_info->section_header[elf_info->elf_header.e_shstrndx];
+
+  UINTN size = str_section.sh_size;
+  elf_info->string_table = allocate_boot_pool(size);
+  
+  EFI_FILE_PROTOCOL *file_interface = elf_info->file_interface;
+  file_set_position(file_interface, str_section.sh_offset);
+  status = file_read_file(file_interface, &size, elf_info->string_table);
+  if(EFI_ERROR(status))
+    return status;
+
+  return EFI_SUCCESS;
+}
+
+static VOID clear_bss(struct elf *elf_info)
+{
+  UINTN i, j;
+  char *bss_name = ".bss";
+  for(i = 0; i < elf_info->elf_header.e_shnum; i++)
+  {
+    struct elf_64_section_header section_header = elf_info->section_header[i];
+    char *section_name = elf_info->string_table + section_header.sh_name;
+    for(j = 0; section_name[j] && bss_name[j] && section_name[j] == bss_name[j]; j++);
+
+    if(!(section_name[j] - bss_name[j]))
+    {
+      UINT64 paddr = section_header.sh_addr - elf_info->program_header[0].p_vaddr +
+                     elf_info->program_header[0].p_paddr;
+      memset((VOID *) paddr, 0, section_header.sh_size);
+      break;
+    }
+  }
+
+}
+
 // Alloc and load section header of elf.
 static EFI_STATUS load_section_header(struct elf *elf_info)
 {
@@ -35,6 +74,10 @@ static EFI_STATUS load_section_header(struct elf *elf_info)
   EFI_FILE_PROTOCOL *file_interface = elf_info->file_interface;
   file_set_position(file_interface, elf_info->elf_header.e_shoff);
   status = file_read_file(file_interface, &size, elf_info->section_header);
+  if(EFI_ERROR(status))
+    return status;
+
+  status = load_string_table(elf_info);
   if(EFI_ERROR(status))
     return status;
 
@@ -76,6 +119,7 @@ VOID elf_clear_all(struct elf *elf_info)
   elf_info->file_interface->Close(elf_info->file_interface);
   free_pool(elf_info->program_header);
   free_pool(elf_info->section_header);
+  free_pool(elf_info->string_table);
 }
 
 EFI_STATUS elf_load_kernel(struct elf *elf_info)
@@ -124,6 +168,8 @@ EFI_STATUS elf_load_kernel(struct elf *elf_info)
     if(file_read_file(file_interface, &size, (EFI_PHYSICAL_ADDRESS *) address))
       return EFI_UNSUPPORTED;
   }
+
+  clear_bss(elf_info);
 
   return EFI_SUCCESS;
 }
