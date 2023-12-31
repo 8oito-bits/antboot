@@ -22,6 +22,7 @@ static EFI_STATUS load_program_header(struct elf *elf_info)
   return EFI_SUCCESS;
 } 
 
+// Load string table of elf.
 static EFI_STATUS load_string_table(struct elf *elf_info)
 {
   EFI_STATUS status;
@@ -40,6 +41,7 @@ static EFI_STATUS load_string_table(struct elf *elf_info)
   return EFI_SUCCESS;
 }
 
+// Clear bss section with zeros.
 static VOID clear_bss(struct elf *elf_info)
 {
   UINTN i, j;
