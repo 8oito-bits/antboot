@@ -1,5 +1,5 @@
-#ifndef _DEFINE_ERRORS_
-#define _DEFINE_ERRORS_
+#ifndef _ERRORS_INCLUDE_
+#define _ERRORS_INCLUDE_
 
 #include <libefi.h>
 

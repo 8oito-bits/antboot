@@ -1,5 +1,5 @@
-#ifndef _DEFINE_FAT_
-#define _DEFINE_FAT_
+#ifndef _FILE_INCLUDE_
+#define _FILE_INCLUDE_
 
 #include <libefi.h>
 

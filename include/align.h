@@ -1,5 +1,5 @@
-#ifndef _PAGE_ALIGN_
-#define _PAGE_ALIGN_
+#ifndef _ALIGN_INCLUDE_
+#define _ALIGN_INCLUDE_
 
 #define PAGE 4096
 
