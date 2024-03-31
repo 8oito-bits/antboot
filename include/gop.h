@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_GOP_
-#define _INCLUDE_GOP_
+#ifndef _GOP_INCLUDE_
+#define _GOP_INCLUDE_
 
 #include <libefi.h>
 

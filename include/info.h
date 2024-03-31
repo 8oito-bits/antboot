@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_INFO_
-#define _INCLUDE_INFO_
+#ifndef _INFO_INCLUDE_
+#define _INFO_INCLUDE_
 
 #include <libefi.h>
 #include <memory.h>

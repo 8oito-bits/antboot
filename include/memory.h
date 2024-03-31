@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_MEMORY_
-#define _INCLUDE_MEMORY_
+#ifndef _MEMORY_INCLUDE_
+#define _MEMORY_INCLUDE_
 
 #include <libefi.h>
 
