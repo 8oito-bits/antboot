@@ -1,0 +1,4 @@
+BOOTX64.EFI
+libefi/libefi.a
+.*
+*.o
